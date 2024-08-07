@@ -1,0 +1,77 @@
+<main>
+    <div class="CurrencyContainer">
+        <div class="InsideCurrencyContainer">
+            <div class="CurrencyInfoContainer">
+                <div class="CurrencySelectorContainer">
+                    @if(currencies[leftCurrency.toUpperCase()] !== "") {
+                    <h1>{{ currencies[leftCurrency.toUpperCase()] }}</h1>
+                    } @else {
+                    <h1>{{ leftCurrency.toUpperCase() }}</h1>
+                    }
+                    <select
+                        *ngIf="currencies"
+                        (change)="onSelectorChange($event)"
+                        [(ngModel)]="leftCurrency"
+                        id="leftCurrency"
+                    >
+                        <option
+                            *ngFor="let item of getKeysOfCurrencies(currencies)"
+                            [value]="item"
+                        >
+                            {{ item }}
+                        </option>
+                    </select>
+                </div>
+                <input
+                    type="number"
+                    appNumberInput
+                    id="leftCurrencyInput"
+                    (input)="onLeftInputChange()"
+                    [(ngModel)]="leftCurrencyAmount"
+                />
+                <p>
+                    1 {{ leftCurrency }} =
+                    {{ values[rightCurrency.toLowerCase()] }}
+                    {{ rightCurrency }}
+                </p>
+            </div>
+            <div class="ButtonContainer">
+                <button (click)="swapCurrencies()"></button>
+            </div>
+            <div class="CurrencyInfoContainer">
+                <div class="CurrencySelectorContainer">
+                    @if(currencies[rightCurrency.toUpperCase()] !== "") {
+                    <h1>{{ currencies[rightCurrency.toUpperCase()] }}</h1>
+                    } @else {
+                    <h1>{{ rightCurrency.toUpperCase() }}</h1>
+                    }
+                    <select
+                        *ngIf="currencies"
+                        (change)="onSelectorChange($event)"
+                        [(ngModel)]="rightCurrency"
+                        id="rightCurrency"
+                    >
+                        <option
+                            *ngFor="let item of getKeysOfCurrencies(currencies)"
+                            [value]="item"
+                        >
+                            {{ item }}
+                        </option>
+                    </select>
+                </div>
+                <input
+                    type="number"
+                    appNumberInput
+                    id="rightCurrencyInput"
+                    (input)="onRightInputChange()"
+                    [(ngModel)]="rightCurrencyAmount"
+                />
+                <p>
+                    1 {{ rightCurrency }} =
+                    {{ rightValues[leftCurrency.toLowerCase()] }}
+                    {{ leftCurrency }}
+                </p>
+            </div>
+        </div>
+    </div>
+</main>
