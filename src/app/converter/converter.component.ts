@@ -2,148 +2,199 @@ import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CurrencyInspectorService } from '../../services/currency-inspector.service';
-import { NumberInputDirective } from '../../directives/number-input.directive';
+import { NumberInputDirective } from '../directives/number-input.directive';
+import { CustomInputCurrencyComponent } from '../custom-input-currency/custom-input-currency.component';
+import { CustomSelectCurrencyComponent } from '../custom-select-currency/custom-select-currency.component';
+import { CustomInfoCurrencyComponent } from '../custom-info-currency/custom-info-currency.component';
+import { CurrencyInspectorService } from '../services/currency-inspector.service';
 
 @Component({
     selector: 'app-converter',
     standalone: true,
-    imports: [RouterOutlet, CommonModule, FormsModule, NumberInputDirective],
+    imports: [
+        RouterOutlet,
+        CommonModule,
+        FormsModule,
+        NumberInputDirective,
+        CustomInputCurrencyComponent,
+        CustomSelectCurrencyComponent,
+        CustomInfoCurrencyComponent,
+    ],
     templateUrl: './converter.component.html',
     styleUrl: './converter.component.css',
 })
 export class ConverterComponent {
-    currencies: { [key: string]: string } = {}; // All currencies
-    values: { [key: string]: string | number } = {}; // Currency values for left selector
-    rightValues: { [key: string]: string | number } = {}; // Currency values for right selector
+    currencies: { [key: string]: string } = {};
 
-    leftCurrency: string = '$MYRO'; // Currency name
-    rightCurrency: string = '$MYRO'; // Currency name
+    upperCurrency = {
+        selectedCurrency: '$MYRO',
+        amount: 1,
+    };
 
-    leftCurrencyAmount: number = 0; // Currency value&amount
-    rightCurrencyAmount: number = 0; // Currency value&amount
+    lowerCurrency = {
+        selectedCurrency: '$MYRO',
+        amount: 1,
+    };
 
-    constructor(private currencyInspectorService: CurrencyInspectorService) {} // Service init
+    upperExchange: number = 1;
+    lowerExchange: number = 1;
+
+    constructor(private currencyInspectorService: CurrencyInspectorService) {}
 
     ngOnInit() {
-        this.currencyInspectorService.getCurrencies().subscribe(
-            // Get all currencies names
-            (response) => {
-                this.currencies = response;
-            }
-        );
-
         this.currencyInspectorService
-            .getValueOfCurrency(this.leftCurrency.toLowerCase())
-            .subscribe(
-                // Get currencies for left and right selectors
-                (response) => {
-                    this.values = response[
-                        this.leftCurrency.toLowerCase()
-                    ] as unknown as {
-                        [key: string]: string;
-                    };
-                    this.rightValues = response[
-                        this.rightCurrency.toLowerCase()
-                    ] as unknown as { [key: string]: string };
-                }
-            );
+            .parseCurrencies()
+            .subscribe((response) => {
+                this.currencies = response;
+            });
+        this.currencyInspectorService
+            .setUpperCurrencyValue(
+                this.upperCurrency.selectedCurrency.toLowerCase()
+            )
+            .subscribe(() => {});
+        this.currencyInspectorService
+            .setLowerCurrencyValue(
+                this.lowerCurrency.selectedCurrency.toLowerCase()
+            )
+            .subscribe(() => {});
+
+        this.upperCurrency = this.currencyInspectorService.getUpperCurrency();
+        this.lowerCurrency = this.currencyInspectorService.getLowerCurrency();
+    }
+
+    syncUpperSelectorCurrency(selectedCurrency: string) {
+        this.currencyInspectorService
+            .setUpperCurrencyValue(selectedCurrency.toLowerCase())
+            .subscribe(() => {
+                this.syncUpperCurrency(this.upperCurrency.amount);
+                this.upperExchange = this.getExchangeRate(
+                    this.upperCurrency.selectedCurrency,
+                    this.lowerCurrency.selectedCurrency
+                );
+            });
+    }
+
+    syncLowerSelectorCurrency(selectedCurrency: string) {
+        this.currencyInspectorService
+            .setLowerCurrencyValue(selectedCurrency.toLowerCase())
+            .subscribe(() => {
+                this.syncUpperCurrency(this.upperCurrency.amount);
+                this.lowerExchange = this.getExchangeRate(
+                    this.lowerCurrency.selectedCurrency,
+                    this.upperCurrency.selectedCurrency
+                );
+            });
+    }
+
+    syncUpperCurrency(amount: number) {
+        this.upperCurrency.amount = amount;
+        this.lowerCurrency.amount = this.calculateLowerAmount();
+        this.currencyInspectorService.setUpperCurrency(
+            this.upperCurrency.selectedCurrency,
+            this.upperCurrency.amount
+        );
+        this.currencyInspectorService.setLowerCurrency(
+            this.lowerCurrency.selectedCurrency,
+            this.lowerCurrency.amount
+        );
+    }
+
+    syncLowerCurrency(amount: number) {
+        this.lowerCurrency.amount = amount;
+        this.upperCurrency.amount = this.calculateUpperAmount();
+        this.currencyInspectorService.setUpperCurrency(
+            this.upperCurrency.selectedCurrency,
+            this.upperCurrency.amount
+        );
+        this.currencyInspectorService.setLowerCurrency(
+            this.lowerCurrency.selectedCurrency,
+            this.lowerCurrency.amount
+        );
+    }
+
+    calculateLowerAmount(): number {
+        const lowerAmount =
+            this.currencyInspectorService.getUpperCurrencyValue();
+        return (
+            this.upperCurrency.amount *
+            Number(
+                lowerAmount[this.lowerCurrency.selectedCurrency.toLowerCase()]
+            )
+        );
+    }
+
+    calculateUpperAmount(): number {
+        const upperAmount =
+            this.currencyInspectorService.getLowerCurrencyValue();
+        return (
+            this.lowerCurrency.amount *
+            Number(
+                upperAmount[this.upperCurrency.selectedCurrency.toLowerCase()]
+            )
+        );
     }
 
     swapCurrencies() {
-        const tempCurrency = this.leftCurrency;
-        this.leftCurrency = this.rightCurrency;
-        this.rightCurrency = tempCurrency;
+        const upperCurrencyTemp = {
+            selectedCurrency: this.upperCurrency.selectedCurrency,
+            amount: this.upperCurrency.amount,
+        };
+        const lowerCurrencyTemp = {
+            selectedCurrency: this.lowerCurrency.selectedCurrency,
+            amount: this.lowerCurrency.amount,
+        };
 
-        const tempAmount = this.leftCurrencyAmount;
-        this.leftCurrencyAmount = this.rightCurrencyAmount;
-        this.rightCurrencyAmount = tempAmount;
+        this.currencyInspectorService.setUpperCurrency(
+            lowerCurrencyTemp.selectedCurrency,
+            lowerCurrencyTemp.amount
+        );
+        this.currencyInspectorService.setLowerCurrency(
+            upperCurrencyTemp.selectedCurrency,
+            upperCurrencyTemp.amount
+        );
+
+        this.upperCurrency = this.currencyInspectorService.getUpperCurrency();
+        this.lowerCurrency = this.currencyInspectorService.getLowerCurrency();
 
         this.currencyInspectorService
-            .getValueOfCurrency(this.leftCurrency.toLowerCase())
-            .subscribe(
-                // Get currencies for left and right selectors
-                (response) => {
-                    this.values = response[
-                        this.leftCurrency.toLowerCase()
-                    ] as unknown as {
-                        [key: string]: string;
-                    };
-                }
-            );
+            .setUpperCurrencyValue(
+                this.upperCurrency.selectedCurrency.toLowerCase()
+            )
+            .subscribe();
+
         this.currencyInspectorService
-            .getValueOfCurrency(this.rightCurrency.toLowerCase())
-            .subscribe(
-                // Get currencies for left and right selectors
-                (response) => {
-                    this.rightValues = response[
-                        this.rightCurrency.toLowerCase()
-                    ] as unknown as { [key: string]: string };
-                }
+            .setLowerCurrencyValue(
+                this.lowerCurrency.selectedCurrency.toLowerCase()
+            )
+            .subscribe();
+    }
+
+    getExchangeRate(sourceCurrency: string, targetCurrency: string): number {
+        const source = sourceCurrency;
+        const target = targetCurrency;
+
+        if (source == this.upperCurrency.selectedCurrency) {
+            const exchangeRes =
+                this.currencyInspectorService.getUpperCurrencyValue()[
+                    target.toLowerCase()
+                ];
+            this.lowerExchange = Number(
+                this.currencyInspectorService.getLowerCurrencyValue()[
+                    source.toLowerCase()
+                ]
             );
-    }
-
-    getKeysOfCurrencies(obj: any): string[] {
-        // Method to get all keys of currencies dictionary
-        return Object.keys(obj);
-    }
-
-    onSelectorChange(event: Event) {
-        // Change selected currency and value
-        this.onCurrencyChange(event.target as HTMLSelectElement);
-    }
-
-    onLeftInputChange() {
-        if (String(this.leftCurrencyAmount) !== null) {
-            this.rightCurrencyAmount =
-                this.leftCurrencyAmount *
-                Number(this.values[this.rightCurrency.toLowerCase()]);
+            return Number(exchangeRes);
         } else {
-            this.leftCurrencyAmount = 0;
-            this.rightCurrencyAmount = 0;
-        }
-    }
-
-    onRightInputChange() {
-        if (String(this.rightCurrencyAmount) !== null) {
-            this.leftCurrencyAmount =
-                this.rightCurrencyAmount *
-                Number(this.rightValues[this.leftCurrency.toLowerCase()]);
-        } else {
-            this.leftCurrencyAmount = 0;
-            this.rightCurrencyAmount = 0;
-        }
-    }
-
-    changeValueOnInputAfterChangeSelector() {
-        this.rightCurrencyAmount =
-            this.leftCurrencyAmount *
-            Number(this.values[this.rightCurrency.toLowerCase()]);
-    }
-
-    onCurrencyChange(selector: HTMLSelectElement) {
-        // Change currency values by selector
-        const lowerCaseValue = selector.value.toLowerCase();
-        if (selector.id == 'leftCurrency') {
-            this.currencyInspectorService
-                .getValueOfCurrency(lowerCaseValue)
-                .subscribe((response) => {
-                    this.values = response[lowerCaseValue] as unknown as {
-                        [key: string]: string;
-                    };
-                    this.changeValueOnInputAfterChangeSelector();
-                    console.log(this.values);
-                });
-        } else {
-            this.currencyInspectorService
-                .getValueOfCurrency(lowerCaseValue)
-                .subscribe((response) => {
-                    this.rightValues = response[lowerCaseValue] as unknown as {
-                        [key: string]: string;
-                    };
-                    this.changeValueOnInputAfterChangeSelector();
-                    console.log(this.rightValues);
-                });
+            const exchangeRes =
+                this.currencyInspectorService.getLowerCurrencyValue()[
+                    target.toLowerCase()
+                ];
+            this.upperExchange = Number(
+                this.currencyInspectorService.getUpperCurrencyValue()[
+                    source.toLowerCase()
+                ]
+            );
+            return Number(exchangeRes);
         }
     }
 }

@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, NgZone, AfterViewInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { CurrencyInspectorService } from '../services/currency-inspector.service';
+import { CurrencyInspectorService } from './services/currency-inspector.service';
 import { ConverterComponent } from './converter/converter.component';
 
 @Component({
@@ -11,33 +11,51 @@ import { ConverterComponent } from './converter/converter.component';
     templateUrl: './app.component.html',
     styleUrl: './app.component.css',
 })
-export class AppComponent {
+export class AppComponent implements AfterViewInit {
     title = 'Currency-Converter';
     currencies: { [key: string]: string } = {};
     eurValues: { [key: string]: string | number } = {};
     usdValues: { [key: string]: string | number } = {};
 
-    constructor(private currencyInspectorService: CurrencyInspectorService) {}
+    constructor(
+        private zone: NgZone,
+        private currencyInspectorService: CurrencyInspectorService
+    ) {}
 
-    ngOnInit() {
-        this.currencyInspectorService.getCurrencies().subscribe((response) => {
-            this.currencies = response;
+    ngAfterViewInit() {
+        this.zone.runOutsideAngular(() => {
+            setTimeout(() => {
+                this.zone.run(() => {
+                    this.onValueInit();
+                });
+            }, 0);
         });
+    }
+    onValueInit() {
+        this.currencyInspectorService
+            .parseCurrencies()
+            .subscribe((response) => {
+                this.currencies = response;
+            });
 
         this.currencyInspectorService
-            .getValueOfCurrency('eur')
+            .parseValueOfCurrency('eur')
             .subscribe((response) => {
                 this.eurValues = response['eur'] as unknown as {
                     [key: string]: string;
                 };
             });
         this.currencyInspectorService
-            .getValueOfCurrency('usd')
+            .parseValueOfCurrency('usd')
             .subscribe((response) => {
                 this.usdValues = response['usd'] as unknown as {
                     [key: string]: string;
                 };
             });
+    }
+
+    onDivClick() {
+        this.onValueInit();
     }
 
     getKeysOfCurrencies(obj: any): string[] {

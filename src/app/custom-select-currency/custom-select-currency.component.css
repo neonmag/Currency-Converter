@@ -1,0 +1,25 @@
+h1 {
+    color: aliceblue;
+}
+.CurrencySelectorContainer {
+    display: flex;
+    flex-direction: row;
+    height: 50%;
+    justify-content: space-between;
+    justify-items: center;
+}
+
+select {
+    display: flex;
+    background-color: transparent;
+    color: aliceblue;
+    height: 5vh;
+    width: 10vh;
+    border-radius: 2rem;
+    padding-left: 1vh;
+}
+
+option {
+    background-color: #141622;
+    color: aliceblue;
+}

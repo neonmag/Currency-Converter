@@ -1,0 +1,21 @@
+<div class="CurrencySelectorContainer">
+    <h1>
+        {{
+            currencies[selectedCurrency.toUpperCase()] ||
+                selectedCurrency.toUpperCase()
+        }}
+    </h1>
+    <select
+        *ngIf="currencies"
+        (change)="onSelectorChange($event)"
+        [(ngModel)]="selectedCurrency"
+        id="currencySelector"
+    >
+        <option
+            *ngFor="let item of getKeysOfCurrencies(currencies)"
+            [value]="item"
+        >
+            {{ item }}
+        </option>
+    </select>
+</div>

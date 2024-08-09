@@ -2,75 +2,43 @@
     <div class="CurrencyContainer">
         <div class="InsideCurrencyContainer">
             <div class="CurrencyInfoContainer">
-                <div class="CurrencySelectorContainer">
-                    @if(currencies[leftCurrency.toUpperCase()] !== "") {
-                    <h1>{{ currencies[leftCurrency.toUpperCase()] }}</h1>
-                    } @else {
-                    <h1>{{ leftCurrency.toUpperCase() }}</h1>
-                    }
-                    <select
-                        *ngIf="currencies"
-                        (change)="onSelectorChange($event)"
-                        [(ngModel)]="leftCurrency"
-                        id="leftCurrency"
-                    >
-                        <option
-                            *ngFor="let item of getKeysOfCurrencies(currencies)"
-                            [value]="item"
-                        >
-                            {{ item }}
-                        </option>
-                    </select>
-                </div>
-                <input
-                    type="number"
-                    appNumberInput
-                    id="leftCurrencyInput"
-                    (input)="onLeftInputChange()"
-                    [(ngModel)]="leftCurrencyAmount"
-                />
-                <p>
-                    1 {{ leftCurrency }} =
-                    {{ values[rightCurrency.toLowerCase()] }}
-                    {{ rightCurrency }}
-                </p>
+                <app-custom-select-currency
+                    [(selectedCurrency)]="upperCurrency.selectedCurrency"
+                    [currencies]="currencies"
+                    (selectedCurrencyChange)="syncUpperSelectorCurrency($event)"
+                >
+                </app-custom-select-currency>
+                <app-custom-input-currency
+                    [(amount)]="upperCurrency.amount"
+                    (amountChange)="syncUpperCurrency($event)"
+                >
+                </app-custom-input-currency>
+                <app-custom-info-currency
+                    [currencyName]="upperCurrency.selectedCurrency"
+                    [targetCurrencyName]="lowerCurrency.selectedCurrency"
+                    [exchangeRate]="upperExchange"
+                ></app-custom-info-currency>
             </div>
             <div class="ButtonContainer">
                 <button (click)="swapCurrencies()"></button>
             </div>
             <div class="CurrencyInfoContainer">
-                <div class="CurrencySelectorContainer">
-                    @if(currencies[rightCurrency.toUpperCase()] !== "") {
-                    <h1>{{ currencies[rightCurrency.toUpperCase()] }}</h1>
-                    } @else {
-                    <h1>{{ rightCurrency.toUpperCase() }}</h1>
-                    }
-                    <select
-                        *ngIf="currencies"
-                        (change)="onSelectorChange($event)"
-                        [(ngModel)]="rightCurrency"
-                        id="rightCurrency"
-                    >
-                        <option
-                            *ngFor="let item of getKeysOfCurrencies(currencies)"
-                            [value]="item"
-                        >
-                            {{ item }}
-                        </option>
-                    </select>
-                </div>
-                <input
-                    type="number"
-                    appNumberInput
-                    id="rightCurrencyInput"
-                    (input)="onRightInputChange()"
-                    [(ngModel)]="rightCurrencyAmount"
-                />
-                <p>
-                    1 {{ rightCurrency }} =
-                    {{ rightValues[leftCurrency.toLowerCase()] }}
-                    {{ leftCurrency }}
-                </p>
+                <app-custom-select-currency
+                    [(selectedCurrency)]="lowerCurrency.selectedCurrency"
+                    [currencies]="currencies"
+                    (selectedCurrencyChange)="syncLowerSelectorCurrency($event)"
+                >
+                </app-custom-select-currency>
+                <app-custom-input-currency
+                    [(amount)]="lowerCurrency.amount"
+                    (amountChange)="syncLowerCurrency($event)"
+                >
+                </app-custom-input-currency>
+                <app-custom-info-currency
+                    [currencyName]="lowerCurrency.selectedCurrency"
+                    [targetCurrencyName]="upperCurrency.selectedCurrency"
+                    [exchangeRate]="lowerExchange"
+                ></app-custom-info-currency>
             </div>
         </div>
     </div>
